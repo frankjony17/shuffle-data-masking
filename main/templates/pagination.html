@@ -1,0 +1,37 @@
+<nav aria-label="...">
+  <ul class="pagination">
+    {% if page_obj.has_previous %}
+    <a class="page-link"
+       href="?database={% if request.GET.database %}{{ request.GET.database }}{% else %}Banco_de_dados{% endif %}&page={{ page_obj.previous_page_number }}{% if request.GET.kw %}&kw={{ request.GET.kw }}{% endif %}"
+       tabindex="-1" aria-disabled="true">Anterior
+    </a>
+    {% endif %}
+
+    {% if page_obj.paginator.num_pages >= 1 %}
+    <li class="page-item">
+        <a class="page-link" href="?database={% if request.GET.database %}{{ request.GET.database }}{% else %}Banco_de_dados{% endif %}&page=1{% if request.GET.kw %}&kw={{ request.GET.kw }}{% endif %}">1</a>
+    </li>
+    {% endif %}
+
+    {% if page_obj.paginator.num_pages >= 2 %}
+    <li class="page-item">
+        <a class="page-link" href="?database={% if request.GET.database %}{{ request.GET.database }}{% else %}Banco_de_dados{% endif %}&page=2{% if request.GET.kw %}&kw={{ request.GET.kw }}{% endif %}">2</a>
+    </li>
+    {% endif %}
+
+    {% if page_obj.paginator.num_pages >= 3 %}
+    <li class="page-item">
+        <a class="page-link" href="?database={% if request.GET.database %}{{ request.GET.database }}{% else %}Banco_de_dados{% endif %}&page=3{% if request.GET.kw %}&kw={{ request.GET.kw }}{% endif %}">3</a>
+    </li>
+    {% endif %}
+
+    {% if page_obj.has_next %}
+    <li class="page-item">
+        <a class="page-link" href="?database={% if request.GET.database %}{{ request.GET.database }}{% else %}Banco_de_dados{% endif %}&page={{ page_obj.next_page_number }}{% if request.GET.kw %}&kw={{ request.GET.kw }}{% endif %}">Próximo</a>
+    </li>
+    <li class="page-item">
+        <a class="page-link" href="?database={% if request.GET.database %}{{ request.GET.database }}{% else %}Banco_de_dados{% endif %}&page={{ page_obj.paginator.num_pages }}{% if request.GET.kw %}&kw={{ request.GET.kw }}{% endif %}">{{ page_obj.paginator.num_pages }}</a>
+    </li>
+    {% endif %}
+  </ul>
+</nav>

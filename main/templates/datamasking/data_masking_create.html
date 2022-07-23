@@ -1,0 +1,162 @@
+{% extends "base.html" %}
+
+{% block breadcrumbs %}
+    <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Dashboard</a></li>
+    <li class="breadcrumb-item active" aria-current="page">Mascaramento de dados</li>
+{% endblock %}
+
+{% block content %}
+<div class="card text-white bg-secondary">
+    <div class="card-body">
+        <form method="get" action="{% url 'datamasking:data-masking-list' %}" role="form">
+            <div class="input-group mb-3">
+                <select class="form-select" aria-label="Banco_de_dados" aria-describedby="button-load-id" name="database" id="form_select_db">
+                    <option value="Banco_de_dados" {% if request.GET.database == "Banco_de_dados" %}selected{% endif %}>Banco_de_dados</option>
+                    <option value="FKSolutions" {% if request.GET.database == "FKSolutions" %}selected{% endif %}>FKSolutions</option>
+                    <option value="FKSOLUTIONS" {% if request.GET.database == "FKSOLUTIONS" %}selected{% endif %}>FKSOLUTIONS</option>
+                </select>
+                &nbsp;&nbsp;&nbsp;
+                <button class="btn btn-dark" type="submit" id="button-load-id" disabled><i class="fab fa-simplybuilt"></i> Carregar</button>
+            </div>
+        </form>
+    </div>
+
+    <div class="card-body">
+        <table class="table table-dark text-center">
+            <thead>
+                <th>Tabelas desabilitadas (Constraints)</th>
+                <th>Tabelas com erros (Constraints)</th>
+                <th>Contraints</th>
+            </thead>
+            <tbody>
+                <tr class="table-active">
+                    <td>{{ table_disabled }}</td>
+                    <td>{{ tables_with_errors }}</td>
+                    <td style="width: 225px;">
+                        <a class="btn btn-dark btn-bordred disabled" href="{% url 'datamasking:data-masking-disable-foreign-keys' database=database %}" id="disabled-fk-id">
+                           <i class="fas fa-unlink"></i> Desabilitar
+                        </a>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="row" style="margin-left: 5px; margin-right: 5px;">
+        <div class="col">
+            <table class="table table-dark">
+                <thead>
+                    <th>Total de tabelas</th>
+                    <th>Tabelas configuradas</th>
+                    <th>Mascaras configuradas</th>
+                </thead>
+                <tbody>
+                    <tr class="table-active">
+                        <td style="padding: 23px;">{{ object_list }}</td>
+                        <td style="padding: 23px;">{{ configured_tables }}</td>
+                        <td style="padding: 23px;">{{ configured_masks }}</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        <div class="col">
+            <table class="table table-dark">
+                <thead>
+                    <th>Mensagem</th>
+                    <th>Workers (Kubernetes - Pods)</th>
+                    <th style="text-align: center;"> - </th>
+                    <th>Publicar mensagem</th>
+                </thead>
+                <tbody>
+                    <tr class="table-active">
+                        <td style="padding: 15px; width: 30%" id="messages-td-id">
+                            0
+                        </td>
+                        <form method="post" action="{% url 'datamasking:data-masking-publish-message' %}" role="form">{% csrf_token %}
+                            <td>
+                                <div class="input-group mb-3">
+                                    <input type="number" class="form-control" min="1" id="number-message-id" name="worker" value="0" style="background-color: #373b3e; color: white;" aria-describedby="load-message-button" required {% if constraint_disabled == False %}disabled{% endif %}>
+                                    <button type="button" class="btn btn-outline-secondary" id="load-message-button-id" disabled><i class="fas fa-paper-plane"></i></button>
+                                </div>
+                            </td>
+                            <td style="width: 75px; text-align: center;"> - </td>
+                            <td style="width: 200px; text-align: center;">
+                                <input type="hidden" class="form-control" name="database" value="{{ request.GET.database }}" required>
+                                <button class="btn btn-dark" id="start-process-button-id" type="submit" disabled><i class="fas fa-meteor"></i> Iniciar processo</button>
+                            </td>
+                        </form>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% include "introspection/modal_status_spinner.html" %}
+</div>
+{% endblock %}
+
+{% block javascript %}
+<script>
+        let btn_load = $("#button-load-id");
+        let select_db = $("#form_select_db");
+        let btn_load_message = $("#load-message-button-id");
+        let btn_start_process = $("#start-process-button-id");
+        let number_message = $("#number-message-id");
+        let messages_td = $("#messages-td-id");
+        let messages_input = $("#messages-input-id");
+        let btn_disabled_fk = $("#disabled-fk-id");
+        let status_modal_spinner = $("#status_modal_spinner");
+
+        {% if request.GET.database %}
+            {% if constraint_disabled == False %}
+                btn_disabled_fk.removeClass("disabled");
+            {% endif %}
+
+            {% if constraint_disabled == True %}
+                {% if constraint_disabled == True %}
+                    btn_load_message.prop('disabled', false);
+                {% endif %}
+            {% endif %}
+        {% endif %}
+
+        select_db.change(function() {
+            if (this.value !== "Banco_de_dados") {
+                btn_load.prop('disabled', false);
+            }
+            else {
+                btn_load.prop('disabled', true);
+                btn_load_message.prop('disabled', true);
+                btn_start_process.prop('disabled', true);
+            }
+        });
+
+        btn_load_message.click(function () {
+            {% if constraint_disabled == True %}
+                btn_start_process.prop('disabled', false);
+            {% endif %}
+
+            {% if constraint_disabled == False %}
+                btn_disabled_fk.prop('disabled', false);
+            {% endif %}
+
+            let table = {{ configured_tables }};
+            let worker = number_message.val();
+            messages_td.html(table * worker);
+        });
+
+        btn_start_process.click(function () {
+            status_modal_spinner.modal('show');
+        });
+
+        $(document).ready(function() {
+            setInterval(function(){
+                {% if process_started == True and constraint_disabled == False %}
+                    window.location = "{{ request.path }}?database={{ database }}";
+                    status_modal_spinner.modal('show');
+                {% endif %}
+            }, 3000);
+            {% if process_started == True and constraint_disabled == False %}
+                status_modal_spinner.modal('show');
+            {% endif %}
+        });
+</script>
+{% endblock %}

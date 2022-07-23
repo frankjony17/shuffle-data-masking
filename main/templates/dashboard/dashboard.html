@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+
+{% block breadcrumbs %}
+    <li class="breadcrumb-item active" aria-current="page">Dashboard</li>
+{% endblock %}
+
+{% block content %}
+<div class="card text-white bg-secondary">
+    {% if reduction_started == True %}
+        {% include "dashboard/reduction_summary.html" %}
+    {% else %}
+        {% include "dashboard/masking_summary.html" %}
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block javascript %}
+<script>
+    $(document).ready(function() {
+        setInterval(function() {
+            window.location = "{{ request.path }}";
+        }, 120000);
+    });
+</script>
+{% endblock %}

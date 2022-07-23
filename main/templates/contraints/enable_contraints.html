@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+
+{% block breadcrumbs %}
+    <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Dashboard</a></li>
+    <li class="breadcrumb-item active" aria-current="page">Mascaramento de dados</li>
+{% endblock %}
+
+{% block content %}
+<div class="card text-white bg-secondary">
+    <div class="card-body">
+        <select class="form-select" aria-label="Banco_de_dados" aria-describedby="button-load-id" name="database" id="form_select_db">
+            <option value="Banco_de_dados" {% if request.GET.database == "Banco_de_dados" %}selected{% endif %}>Banco_de_dados</option>
+            <option value="FKSolutions" {% if request.GET.database == "FKSolutions" %}selected{% endif %}>FKSolutions</option>
+            <option value="FKSOLUTIONS" {% if request.GET.database == "FKSOLUTIONS" %}selected{% endif %}>FKSOLUTIONS</option>
+        </select>
+    </div>
+
+    <div class="card-body">
+        <table class="table table-dark text-center">
+            <thead>
+                <th>Tabelas habilitadas (Constraints)</th>
+                <th>Tabelas com erros (Constraints)</th>
+                <th>Constraints</th>
+            </thead>
+            <tbody>
+                <tr class="table-active">
+                    <td>
+                        {% if is_database_enabled == False %}
+                            <span style="color: #BD362F">-{{ table_enabled }}</span>
+                        {% else %}
+                            {{ table_enabled }}
+                        {% endif %}
+                    </td>
+                    <td>{{ tables_with_errors }}</td>
+                    <td style="width: 225px;">
+                        <a class="btn btn-dark btn-bordred" href="{% url 'constraints-enable-start' database=database %}" id="enabled-constraints-id">
+                           <i class="fas fa-link"></i> Habilitar
+                        </a>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    {% include "introspection/modal_status_spinner.html" %}
+</div>
+{% endblock %}
+
+{% block javascript %}
+<script>
+    let select_db = $("#form_select_db");
+
+    select_db.change(function() {
+        window.location.href = "{% url 'constraints-enable' %}?database="+ this.value +""
+    });
+</script>
+{% endblock %}

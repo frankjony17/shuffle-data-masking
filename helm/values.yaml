@@ -1,0 +1,105 @@
+# Default values for fksolutions-apps.
+replicaCount: $REPLICAS
+
+pipeline:
+  version: $GO_PIPELINE_LABEL
+
+image:
+  repository: $IMAGE_REPOSITRY
+  pullPolicy: IfNotPresent
+  # Overrides the image tag whose default is the chart appVersion.
+  tag: $IMAGE_TAG
+
+database:
+  enabled: true
+  dbEnv: $ENV
+
+app:
+  type: "api"
+  probe:
+    liveness: "$ENDPOINT_TEST"
+    readiness: "$ENDPOINT_TEST"
+service:
+  name: http-port
+  port: 80
+  targetPort: 8080
+
+secret:
+  enable: true
+  data:
+    # ConnectionStrings
+    SHUFFLE_DATA_MASKING_USER: "$SHUFFLE_DATA_MASKING_USER"
+    SHUFFLE_DATA_MASKING_PASSWORD: "$SHUFFLE_DATA_MASKING_PASSWORD"
+    FKSOLUTIONS_USER: "$FKSOLUTIONS_USER"
+    FKSOLUTIONS_PASSWORD: "$FKSOLUTIONS_PASSWORD"
+    FKSOLUTIONS_USER: "$FKSOLUTIONS_USER"
+    FKSOLUTIONS_PASSWORD: "$FKSOLUTIONS_PASSWORD"
+    # RabbitMQ
+    QUEUE_DATA_MASKING_USER: "$RABBIT_TRN_USER"
+    QUEUE_DATA_MASKING_PASSWORD: "$RABBIT_TRN_PASS"
+
+config:
+  enable: true
+  data:
+    # Timezone
+    TZ: "$TZ"
+    # Database
+    SHUFFLE_DATA_MASKING_NAME: "$SHUFFLE_DATA_MASKING_NAME"
+    SHUFFLE_DATA_MASKING_HOST: "$SHUFFLE_DATA_MASKING_HOST"
+    SHUFFLE_DATA_MASKING_PORT: "$SHUFFLE_DATA_MASKING_PORT"
+    FKSOLUTIONS_NAME: "$FKSOLUTIONS_NAME"
+    FKSOLUTIONS_HOST: "$FKSOLUTIONS_HOST"
+    FKSOLUTIONS_PORT: "$FKSOLUTIONS_PORT"
+    FKSOLUTIONS_NAME: "$FKSOLUTIONS_NAME"
+    FKSOLUTIONS_HOST: "$FKSOLUTIONS_HOST"
+    FKSOLUTIONS_PORT: "$FKSOLUTIONS_PORT"
+    # RabbitConfig
+    QUEUE_DATA_MASKING_EXCHANGE: "$QUEUE_DATA_MASKING_EXCHANGE"
+    QUEUE_DATA_MASKING_HOST: "$RABBIT_TRN_HOST"
+    QUEUE_DATA_MASKING_PORT: "$RABBIT_TRN_PORT"
+    # Queues
+    QUEUE_DATA_MASKING: "$QUEUE_DATA_MASKING"
+
+ingress:
+  hosts:
+    - host: "$INGRESS_HOSTNAME"
+      paths:
+      - path: /
+        backend:
+          serviceName: "$APP_NAME-svc"
+          servicePort: $SVC_PORT
+  tls:
+    - secretName: ${APP_NAME}-${ENV}-tls
+      hosts:
+        - $INGRESS_HOSTNAME
+
+resources:
+  limits:
+    cpu: "$RESOURCE_CPU_LIMIT"
+    memory: "$RESOURCE_MEM_LIMIT"
+  requests:
+    cpu: "$RESOURCE_CPU_REQUEST"
+    memory: "$RESOURCE_MEM_REQUEST"
+
+autoscaling:
+  enabled: false
+  minReplicas: "$MAX_REPLICAS"
+  maxReplicas: "$REPLICAS"
+  targetCPUUtilizationPercentage: 80
+  targetMemoryUtilizationPercentage: 80
+
+# cron:
+#   schedule: "$CRON_SCHEDULE"
+vault:
+  enabled: $USE_VAULT
+  vaultimage: registry.devfksolutions.com.br/base-images/vault-secrets-injector:1.1.0
+  mountPath: /app/vault
+  fileName: secrets
+  resources:
+    limits:
+      cpu: $VAULT_RESOURCE_CPU_LIMIT
+      memory: $VAULT_RESOURCE_MEM_LIMIT
+
+metadata:
+  name: $APP_NAME
+  version: $GO_PIPELINE_LABEL

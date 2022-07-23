@@ -1,0 +1,145 @@
+{% extends "base.html" %}
+
+{% block breadcrumbs %}
+    <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Dashboard</a></li>
+    <li class="breadcrumb-item active" aria-current="page"> Redução de bancos (database)</li>
+{% endblock %}
+
+{% block styleblock %}
+<style>
+    .table-fixed {
+        width: 100%;
+        background-color: #373b3e;
+    }
+    .table-fixed tbody {
+         height: 469px;
+         overflow-y: auto;
+         width: 100%;
+    }
+    .table-fixed thead, .table-fixed tbody, .table-fixed tr, .table-fixed td, .table-fixed th {
+         display: block;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="card text-white bg-secondary">
+    <div class="card-body">
+        <select class="form-select" aria-label="Banco_de_dados" name="database" id="select_database" style="margin-bottom: 5px;">
+            <option value="Banco_de_dados" {% if database == "Banco_de_dados" %}selected{% endif %}>Banco_de_dados</option>
+            <option value="FKSOLUTIONS" {% if database == "FKSOLUTIONS" %}selected{% endif %}>FKSOLUTIONS</option>
+            <option value="FKSolutions" {% if database == "FKSolutions" %}selected{% endif %}>FKSolutions</option>
+        </select>
+        <select class="selectpicker" aria-label="Tabelas" data-live-search="true" data-width="100%" name="principal-table" id="select-tables-id">
+            {% for table in object_list %}
+                <option value="{{ table.id }}">{{ table.table_name }}</option>
+            {% endfor %}
+        </select>
+    </div>
+
+    <div class="card-body">
+        <div class="row">
+            <div class="col-3">
+                <table class="table table-dark table-fixed table-striped" id="relative-table-id">
+                    <thead>
+                        <th>Tabelas afetadas</th>
+                    </thead>
+                    <tbody></tbody>
+                    <tfoot><tr><td style='text-align: right'>Total: 0 tabelas.</td></tr></tfoot>
+                </table>
+            </div>
+            <div class="col-9">
+                <div class="card bg-dark text-white" style="height: 550px;">
+                    <h5 class="card-header">Configurar redução</h5>
+                    <div class="card-body" style="height: 100%;">
+                        <form method="post" action="{% url 'databasereduction:reduction-start-load' %}" role="form" style="height: 100%;">{% csrf_token %}
+                            <input class="form-control" type="hidden" name="database" value="{{ database }}">
+                            <input class="form-control" type="hidden" name="table_id" id="reduction-table-id">
+                            <div class="row">
+                                <div class="col-8">
+                                    <select class="form-select" name="reduction-type" id="reduction-type-id" style="background-color: #373b3e; color: white;">
+                                        <option value="ID">Por ID</option>
+                                        <option value="TOTAL">Por Total</option>
+                                    </select>
+                                </div>
+                                <div class="col-4">
+                                    <input class="form-control" type="text" name="total-row" placeholder="Total de registros no banco de dados." required style="background-color: #373b3e; color: white;">
+                                </div>
+                            </div>
+                            &nbsp;
+                            <div class="row" id="textarea-row-id"></div>
+                            &nbsp;
+                            <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                                <button class="btn btn-dark" type="submit"><i class="fas fa-cut"></i> Iniciar a redução</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% include "introspection/modal_status_spinner.html" %}
+</div>
+{% endblock %}
+
+{% block javascript %}
+<script>
+    let select_database = "#select_database";
+    let select_tables = "#select-tables-id";
+    let status_modal_spinner = $("#status_modal_spinner");
+    let reduction_table_input = "#reduction-table-id";
+    let textarea_row = "#textarea-row-id";
+    let relative_table = "#relative-table-id";
+
+    $(select_database).change(function() {
+        window.location = "{{ request.path }}?database=" + this.value;
+    });
+
+    $(select_tables).change(function() {
+        let pk = $(this).val();
+        $(reduction_table_input).val(pk);
+        status_modal_spinner.modal('show');
+
+        $.ajax({
+            url: '{% url "databasereduction:reduction-get-relative-table" %}',
+            data: {
+                'csrftoken': $("input[name=csrfmiddlewaretoken]").val(),
+                'pk': pk
+            },
+            dataType: 'json',
+            success: function (data) {
+                let total = JSON.parse(data["total"]);
+                let result = JSON.parse(data["result"]);
+                let columnPk = data["column_pk"];
+
+                $("tfoot").remove();
+                $("tbody").remove();
+                $(relative_table).append($('<tbody/>'));
+
+                result.forEach(function(table_name) {
+                    $("#relative-table-id > tbody:last-child").append("<tr><td>"+ table_name +"</td></tr>");
+                });
+                $(relative_table).append($('<tfoot/>').append("<tr><td style='text-align: right'>Total: "+ total +" tabelas.</td></tr>"));
+
+                createTextArea(columnPk);
+                status_modal_spinner.modal('hide');
+            }
+        });
+    });
+    function createTextArea(column_pk) {
+        let flex = 12 / column_pk.length;
+
+        column_pk.forEach(function(column) {
+            let floatingDiv = $('<div class="form-floating">')
+            let textArea = $('<textarea class="form-control" name="'+ column +'" id="'+ column +'" style="background-color: #373b3e; color: white; height: 350px; max-height: 350px;"></textarea>');
+            let textAreaLabel = $('<label for="'+ column +'">'+ column.toUpperCase() +': Insira os IDs separados por vírgula.</label>');
+            let columnRow = $('<div class="col-'+ flex +'">');
+
+            floatingDiv.append(textArea);
+            floatingDiv.append(textAreaLabel);
+            columnRow.append(floatingDiv);
+            $(textarea_row).append(columnRow);
+        });
+    }
+</script>
+{% endblock %}

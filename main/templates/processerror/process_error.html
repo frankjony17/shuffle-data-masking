@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+
+{% block breadcrumbs %}
+    <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Dashboard</a></li>
+    <li class="breadcrumb-item active" aria-current="page">Manejo de Erros</li>
+{% endblock %}
+
+{% block content %}
+<div class="card text-white bg-secondary">
+    <div class="card-body">
+        {% include "pagination.html" %}
+        <table class="table table-dark text-center">
+            <thead>
+                <th>Tabelas</th>
+                <th>Tipo de error</th>
+                <th>Descrição</th>
+                <th></th>
+            </thead>
+            <tbody>
+                {% for obj in object_list %}
+                <tr class="table-active">
+                    <td style="text-align: left;">{{ obj.table.table_name }}</td>
+                    <td>{{ obj.error_type.error_type }}</td>
+                    <td style="text-align: left; width: 60%;">
+                        {{ obj.error_description }}
+                        <a class="btn btn-link" data-bs-toggle="collapse" href="#collapseQuery{{ obj.process_error_id }}" role="button" aria-expanded="false" aria-controls="collapseQuery{{ obj.process_error_id }}" style="padding: 2px; margin-bottom: 5px;">
+                            <i class="fas fa-code"></i>
+                        </a>
+                        <div class="collapse" id="collapseQuery{{ obj.process_error_id }}">
+                            <div class="card card-body" style="background-color: rgba(55,59,62,0.85); color: white">
+                                <code>{{ obj.original_query }}</code>
+                            </div>
+                        </div>
+                    </td>
+                    <td style="width: 75px;">
+                        <form method="post" action="{% url 'processerror:error-run' %}" role="form">{% csrf_token %}
+                            <input class="form-control" type="hidden" name="pk" value="{{ obj.process_error_id }}" required/>
+                            <button class="btn btn-dark" type="submit" {% if run_error != 0 %}disabled{% endif %}><i class="fas fa-bolt"></i></button>
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+            <a class="btn btn-dark" href="{% url 'processerror:error-run-all' %}"><i class="fas fa-poo-storm"></i> Executar tudo</a>
+        </div>
+    </div>
+    {% include "introspection/modal_status_spinner.html" %}
+</div>
+{% endblock %}
+
+{% block javascript %}
+<script>
+    let status_modal_spinner = $("#status_modal_spinner");
+
+    $(document).ready(function() {
+        setInterval(function() {
+            {% if status_error %}
+                window.location = "{{ request.path }}?error={{ run_error }}";
+            {% endif %}
+
+            {% if run_all != 0 %}
+                window.location = "{{ request.path }}?run_all=ok";
+            {% endif %}
+
+        }, 3000);
+        {% if status_error or run_all != 0 %}
+            status_modal_spinner.modal('show');
+        {% endif %}
+    });
+</script>
+{% endblock %}

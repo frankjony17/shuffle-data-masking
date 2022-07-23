@@ -1,0 +1,70 @@
+
+<div class="card-body">
+    <h2>Resumo</h2>
+    <table class="table table-dark text-center">
+        <thead>
+            <th>Número de tabelas</th>
+            <th>Mascaras configuradas</th>
+            <th>Mascaras processadas</th>
+            <th>Quantidade de registros</th>
+            <th>Registros processados</th>
+            <th>Finalizado (%)</th>
+        </thead>
+        <tbody>
+            <tr class="table-active">
+                <td>{{ number_of_tables }}</td>
+                <td>{{ configured_masks }}</td>
+                <td>{{ processed_masks }}</td>
+                <td>{{ number_of_record }}</td>
+                <td>{{ record_processed }}</td>
+                <td>
+                    {% if percent_finished < 100 %}
+                        <span style="color:#BD362F">{{ percent_finished }}</span>  &nbsp;&nbsp;&nbsp;
+                        <div class="spinner-border spinner-border-sm" role="status">
+                          <span class="visually-hidden">Loading...</span>
+                        </div>
+                        <div class="spinner-grow spinner-grow-sm" role="status">
+                          <span class="visually-hidden">Loading...</span>
+                        </div>
+                    {% else %}
+                        <span style="color:green">{{ percent_finished }}</span>
+                    {% endif %}
+                </td>
+            </tr>
+        </tbody>
+    </table>
+    <br>
+    <table class="table table-dark text-center">
+        <thead>
+            <th style="text-align: left;">Tabelas</th>
+            <th>Data de início</th>
+            <th>Quantidade de registros</th>
+            <th>Registros processados</th>
+            <th>%</th>
+        </thead>
+        <tbody>
+            {% for obj in object_list %}
+            <tr class="table-active">
+                <td style="text-align: left;">{{ obj.table }}</td>
+                <td>{{ obj.start_date|date:'Y-m-d h:i:s'}}</td>
+                <td>{{ obj.number_of_record }}</td>
+                <td>{{ obj.record_processed }}</td>
+                <td>
+                    {% if obj.percent_finished < 100 %}
+                        <span style="color:#BD362F">{{ obj.percent_finished }}</span>  &nbsp;&nbsp;&nbsp;
+                        <div class="spinner-border spinner-border-sm" role="status">
+                          <span class="visually-hidden">Loading...</span>
+                        </div>
+                        <div class="spinner-grow spinner-grow-sm" role="status">
+                          <span class="visually-hidden">Loading...</span>
+                        </div>
+                    {% else %}
+                        <span style="color:green">{{ obj.percent_finished }}</span>
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% include "pagination.html" %}
+</div>

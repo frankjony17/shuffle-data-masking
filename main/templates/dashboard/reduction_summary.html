@@ -1,0 +1,32 @@
+
+<div class="card-body">
+    <h2>Resumo</h2>
+    <table class="table table-dark text-center">
+        <thead>
+            <th>Número de tabelas</th>
+            <th>Tabelas a serem reduzidas</th>
+            <th>Tabelas reduzidas</th>
+            <th>Finalizado (%)</th>
+        </thead>
+        <tbody>
+            <tr class="table-active">
+                <td>{{ number_of_tables }}</td>
+                <td>{{ reduction_total }}</td>
+                <td>{{ reduction_count }}</td>
+                <td>
+                    {% if reduction_percent < 100 %}
+                        <span style="color:#BD362F">{{ reduction_percent }}</span>  &nbsp;&nbsp;&nbsp;
+                        <div class="spinner-border spinner-border-sm" role="status">
+                          <span class="visually-hidden">Loading...</span>
+                        </div>
+                        <div class="spinner-grow spinner-grow-sm" role="status">
+                          <span class="visually-hidden">Loading...</span>
+                        </div>
+                    {% else %}
+                        <span style="color:green">{{ reduction_percent }}</span>
+                    {% endif %}
+                </td>
+            </tr>
+        </tbody>
+    </table>
+</div>
